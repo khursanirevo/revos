@@ -23,8 +23,12 @@ def _progress_hook(block_num: int, block_size: int, total_size: int) -> None:
         pct = min(100, downloaded * 100 // total_size)
         mb_down = downloaded / (1024 * 1024)
         mb_total = total_size / (1024 * 1024)
-        if pct % 10 == 0 and pct > 0:
-            logger.info("Downloading: %d%% (%.1f / %.1f MB)", pct, mb_down, mb_total)
+        if pct % 20 == 0 and pct > 0:
+            logger.info(
+                "Downloading: %d%% (%.1f / %.1f MB)", pct, mb_down, mb_total
+            )
+    elif downloaded % (5 * 1024 * 1024) < block_size:
+        logger.info("Downloading: %.1f MB", downloaded / (1024 * 1024))
 
 
 def _download(url: str, dest: Path) -> None:
@@ -39,12 +43,11 @@ def _extract(archive_path: Path, dest_dir: Path) -> None:
     name = archive_path.name
     if name.endswith(".tar.bz2") or name.endswith(".tar.gz") or name.endswith(".tgz"):
         with tarfile.open(archive_path) as tf:
-            tf.extractall(dest_dir)
+            tf.extractall(dest_dir, filter="data")
     elif name.endswith(".zip"):
         with zipfile.ZipFile(archive_path) as zf:
             zf.extractall(dest_dir)
     else:
-        # Assume it's a single file, just move it
         shutil.copy2(archive_path, dest_dir / archive_path.name)
 
 
@@ -117,10 +120,6 @@ def ensure_model(manifest: ModelManifest) -> Path:
         # Cleanup
         shutil.rmtree(extract_dir, ignore_errors=True)
         archive_path.unlink(missing_ok=True)
-    else:
-        # Single file download
-        if archive_path.name != archive_name:
-            pass  # Already in place
 
     logger.info("Model %s ready at %s", manifest.name, model_dir)
     return model_dir

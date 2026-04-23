@@ -103,7 +103,6 @@ revos synthesize -m omnivoice -f script.txt -o audiobook.wav
 | Model | Task | Backend | Languages | Description |
 |-------|------|---------|-----------|-------------|
 | `zipformer-v2` | ASR | sherpa-onnx | English | Zipformer small transducer model |
-
 | `omnivoice` | TTS | OmniVoice | 600+ | Zero-shot multilingual TTS with voice cloning |
 
 ## Adding Custom Models
