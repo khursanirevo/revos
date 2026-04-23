@@ -107,3 +107,45 @@ def test_transcribe_srt_output(mock_asr_cls, runner: CliRunner, sample_wav):
 def test_synthesize_requires_text_or_file(runner: CliRunner):
     result = runner.invoke(cli, ["synthesize", "-m", "test", "-o", "out.wav"])
     assert result.exit_code != 0
+
+
+@patch("revos.tts.TTS")
+def test_synthesize_text_output(mock_tts_cls, runner: CliRunner):
+    """Test synthesize command with text input and output."""
+    import numpy as np
+
+    from revos.tts.result import Audio
+
+    mock_tts = MagicMock()
+    samples = np.random.randn(24000).astype(np.float32) * 0.1
+    mock_tts.synthesize.return_value = Audio(samples=samples, sample_rate=24000)
+    mock_tts_cls.return_value = mock_tts
+
+    with runner.isolated_filesystem():
+        result = runner.invoke(
+            cli, ["synthesize", "-m", "test", "-t", "Hello", "-o", "out.wav"]
+        )
+    assert result.exit_code == 0
+    assert "Saved" in result.output
+
+
+@patch("revos.tts.TTS")
+def test_synthesize_from_file(mock_tts_cls, runner: CliRunner):
+    """Test synthesize command reading from text file."""
+    import numpy as np
+
+    from revos.tts.result import Audio
+
+    mock_tts = MagicMock()
+    samples = np.random.randn(24000).astype(np.float32) * 0.1
+    mock_tts.synthesize.return_value = Audio(samples=samples, sample_rate=24000)
+    mock_tts_cls.return_value = mock_tts
+
+    with runner.isolated_filesystem():
+        with open("input.txt", "w") as f:
+            f.write("Hello from file")
+
+        result = runner.invoke(
+            cli, ["synthesize", "-m", "test", "-f", "input.txt", "-o", "out.wav"]
+        )
+    assert result.exit_code == 0

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from revos.asr.result import Segment, Transcript
 
 
@@ -103,3 +105,25 @@ def test_asr_factory(mock_cls):
     )
     ASR("test")
     mock_cls.assert_called_once_with("test", "auto")
+
+
+def test_asr_unsupported_backend():
+    """Test that unsupported backend raises ValueError."""
+    from revos.asr import ASR
+    from revos.registry.manifest import ModelManifest
+    from revos.registry.registry import register
+
+    register(
+        ModelManifest(
+            name="bad",
+            task="asr",
+            backend="nonexistent",
+            model_type="",
+            model_url="",
+            sample_rate=16000,
+            language="en",
+            description="",
+        )
+    )
+    with pytest.raises(ValueError, match="Unsupported ASR backend"):
+        ASR("bad")
