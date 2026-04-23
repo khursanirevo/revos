@@ -72,6 +72,19 @@ def test_extract_zip(tmp_path: Path):
     assert (dest_dir / "tokens.txt").exists()
 
 
+def test_extract_zip_rejects_path_traversal(tmp_path: Path):
+    """Test that zip entries with path traversal are rejected."""
+    archive_path = tmp_path / "evil.zip"
+    with zipfile.ZipFile(archive_path, "w") as zf:
+        zf.writestr("../../../etc/passwd", "evil content")
+
+    dest_dir = tmp_path / "extracted"
+    dest_dir.mkdir()
+
+    with pytest.raises(ValueError, match="Unsafe path"):
+        _extract(archive_path, dest_dir)
+
+
 def test_extract_single_file(tmp_path: Path):
     """Test extracting a single file (non-archive)."""
     single_file = tmp_path / "model.bin"
@@ -175,3 +188,17 @@ def test_download_creates_parent_dirs(tmp_path: Path):
     with patch("urllib.request.urlretrieve"):
         _download("http://example.com/file.tar.bz2", dest)
     assert dest.parent.is_dir()
+
+
+def test_download_rejects_file_scheme(tmp_path: Path):
+    """Test that file:// URLs are rejected."""
+    dest = tmp_path / "file.tar.bz2"
+    with pytest.raises(ValueError, match="Invalid model URL scheme"):
+        _download("file:///etc/passwd", dest)
+
+
+def test_download_rejects_ftp_scheme(tmp_path: Path):
+    """Test that ftp:// URLs are rejected."""
+    dest = tmp_path / "file.tar.bz2"
+    with pytest.raises(ValueError, match="Invalid model URL scheme"):
+        _download("ftp://example.com/model.tar.bz2", dest)

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -47,6 +48,7 @@ def _log_to_local(usage: dict) -> None:
     _USAGE_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(_USAGE_LOG, "a") as f:
         f.write(json.dumps(usage, default=str) + "\n")
+    os.chmod(_USAGE_LOG, 0o600)
 
 
 def track_usage(

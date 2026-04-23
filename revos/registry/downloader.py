@@ -33,6 +33,10 @@ def _progress_hook(block_num: int, block_size: int, total_size: int) -> None:
 
 def _download(url: str, dest: Path) -> None:
     """Download a file from URL to dest with progress logging."""
+    if not url.startswith(("https://", "http://")):
+        raise ValueError(
+            f"Invalid model URL scheme: {url}. Only https:// and http:// are allowed."
+        )
     dest.parent.mkdir(parents=True, exist_ok=True)
     logger.info("Downloading %s -> %s", url, dest)
     urllib.request.urlretrieve(url, dest, reporthook=_progress_hook)
@@ -45,10 +49,22 @@ def _extract(archive_path: Path, dest_dir: Path) -> None:
         with tarfile.open(archive_path) as tf:
             tf.extractall(dest_dir, filter="data")
     elif name.endswith(".zip"):
-        with zipfile.ZipFile(archive_path) as zf:
-            zf.extractall(dest_dir)
+        _extract_zip_safe(archive_path, dest_dir)
     else:
         shutil.copy2(archive_path, dest_dir / archive_path.name)
+
+
+def _extract_zip_safe(archive_path: Path, dest_dir: Path) -> None:
+    """Extract a zip archive with path-traversal protection."""
+    dest_resolved = dest_dir.resolve()
+    with zipfile.ZipFile(archive_path) as zf:
+        for member in zf.infolist():
+            member_dest = (dest_dir / member.filename).resolve()
+            if not str(member_dest).startswith(str(dest_resolved)):
+                raise ValueError(
+                    f"Unsafe path in zip archive: {member.filename}"
+                )
+            zf.extract(member, dest_dir)
 
 
 def _find_model_dir(extract_dir: Path, manifest: ModelManifest) -> Path:
