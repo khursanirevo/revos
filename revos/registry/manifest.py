@@ -24,6 +24,7 @@ class ModelManifest:
     language: str
     description: str
     files: dict[str, str] = field(default_factory=dict)
+    hf_private: bool = False
 
 
 def load_manifest(path: Path) -> ModelManifest:
@@ -48,4 +49,5 @@ def load_manifest(path: Path) -> ModelManifest:
         language=data.get("language", ""),
         description=data.get("description", ""),
         files=data.get("files", {}),
+        hf_private=data.get("hf_private", False),
     )

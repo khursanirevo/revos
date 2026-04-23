@@ -230,7 +230,7 @@ To add a completely new task (e.g., speaker diarization, voice activity detectio
 
 When adding any new model or backend, verify:
 
-- [ ] `uv run pytest tests/ -v` — all 23+ tests pass
+- [ ] `uv run pytest tests/ -v` — all tests pass
 - [ ] Factory function returns correct engine type
 - [ ] Manifest loads and registers correctly
 - [ ] CLI works: `uv run revos transcribe -m {model} test.wav`
