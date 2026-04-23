@@ -6,3 +6,16 @@ Quick start:
 """
 
 __version__ = "0.1.0"
+
+
+def __getattr__(name: str):
+    """Lazy re-exports for convenience: from revos import ASR, TTS."""
+    if name == "ASR":
+        from revos.asr import ASR
+
+        return ASR
+    if name == "TTS":
+        from revos.tts import TTS
+
+        return TTS
+    raise AttributeError(f"module 'revos' has no attribute {name!r}")

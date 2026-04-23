@@ -18,7 +18,7 @@ pip install revos[tts]
 # With GPU support
 pip install revos[gpu]
 
-# Everything
+# Everything (GPU + TTS)
 pip install revos[all]
 
 # Or with uv
@@ -27,7 +27,7 @@ uv add revos
 
 ### HuggingFace Login (Required for TTS)
 
-The OmniVoice TTS model is hosted on a private HuggingFace repository. Before using TTS, log in to HuggingFace:
+> **Note:** The OmniVoice TTS model is hosted on a private HuggingFace repository. You **must** log in before using TTS.
 
 ```bash
 pip install huggingface-hub
@@ -35,6 +35,11 @@ huggingface-cli login
 ```
 
 Get your token at https://huggingface.co/settings/tokens
+
+### Important Notes
+
+- `revos[gpu]` and `revos[all]` install `onnxruntime-gpu`, which **conflicts** with `onnxruntime`. If you already have `revos` installed, uninstall it first before installing the GPU variant.
+- Audio formats supported: WAV, FLAC, OGG, and any format supported by `libsndfile`.
 
 ## Quick Start
 

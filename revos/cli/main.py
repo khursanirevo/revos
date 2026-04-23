@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import click
 
@@ -144,9 +145,8 @@ def info() -> None:
     click.echo(f"Models loaded:   {len(list_models())}")
 
     # Cache dir
-    from revos.registry.downloader import CACHE_DIR
-
-    click.echo(f"Cache dir:       {CACHE_DIR}")
+    cache_dir = Path.home() / ".cache" / "revos"
+    click.echo(f"Cache dir:       {cache_dir}")
 
     # HF auth
     try:
