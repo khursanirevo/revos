@@ -41,6 +41,12 @@ def get(name: str, task: str) -> ModelManifest:
     if key not in _models:
         available = list_models(task)
         names = [m.name for m in available]
+        if not names:
+            raise KeyError(
+                f"Model '{name}' (task={task}) not found. "
+                f"No {task} models are registered. "
+                f"Add a manifest in ~/.config/revos/models/{task}/"
+            )
         raise KeyError(
             f"Model '{name}' (task={task}) not found. "
             f"Available {task} models: {names}"

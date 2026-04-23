@@ -125,5 +125,5 @@ def test_asr_unsupported_backend():
             description="",
         )
     )
-    with pytest.raises(ValueError, match="Unsupported ASR backend"):
+    with pytest.raises(ValueError, match="Supported backends: sherpa-onnx"):
         ASR("bad")

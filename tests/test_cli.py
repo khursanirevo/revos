@@ -149,3 +149,49 @@ def test_synthesize_from_file(mock_tts_cls, runner: CliRunner):
             cli, ["synthesize", "-m", "test", "-f", "input.txt", "-o", "out.wav"]
         )
     assert result.exit_code == 0
+
+
+def test_models_command(runner: CliRunner):
+    """Test revos models lists registered models."""
+    from revos.registry.registry import _models
+
+    _models.clear()
+    from revos.registry.manifest import ModelManifest
+    from revos.registry.registry import register
+
+    register(
+        ModelManifest(
+            name="test-model",
+            task="asr",
+            backend="sherpa-onnx",
+            model_type="",
+            model_url="",
+            sample_rate=16000,
+            language="en",
+            description="",
+        )
+    )
+
+    result = runner.invoke(cli, ["models"])
+    assert result.exit_code == 0
+    assert "test-model" in result.output
+    assert "asr" in result.output
+
+
+def test_models_no_models(runner: CliRunner):
+    """Test revos models when no models registered."""
+    from revos.registry.registry import _models
+
+    _models.clear()
+
+    result = runner.invoke(cli, ["models"])
+    assert result.exit_code == 0
+    assert "No models found" in result.output
+
+
+def test_info_command(runner: CliRunner):
+    """Test revos info shows environment info."""
+    result = runner.invoke(cli, ["info"])
+    assert result.exit_code == 0
+    assert "Python" in result.output
+    assert "Cache dir" in result.output

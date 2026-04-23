@@ -1,5 +1,9 @@
 # RevoS
 
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/revos/revos/ci.yml?branch=main)](.github/workflows/ci.yml)
+
 A unified Python library for speech AI — ASR and TTS using open models.
 
 ## Installation
@@ -26,14 +30,8 @@ uv add revos
 The OmniVoice TTS model is hosted on a private HuggingFace repository. Before using TTS, log in to HuggingFace:
 
 ```bash
-# Install HF CLI (if not already installed)
 pip install huggingface-hub
-
-# Log in — you'll be prompted for your access token
 huggingface-cli login
-
-# Or set it via environment variable
-export HF_TOKEN=hf_your_token_here
 ```
 
 Get your token at https://huggingface.co/settings/tokens
@@ -71,12 +69,6 @@ audio = tts.synthesize(
     ref_text='Sample of the speaker talking.',
 )
 audio.save('cloned.wav')
-
-# Voice design (describe the voice)
-audio = tts.synthesize(
-    'Good morning everyone.',
-    # instruct parameter available via OmniVoice backend
-)
 ```
 
 ### CLI
@@ -85,10 +77,10 @@ audio = tts.synthesize(
 # Transcribe audio
 revos transcribe -m zipformer-v2 audio.wav
 
-# With JSON output
+# JSON output
 revos transcribe -m zipformer-v2 --json audio.wav
 
-# With SRT subtitles
+# SRT subtitles
 revos transcribe -m zipformer-v2 --srt audio.wav
 
 # Synthesize speech
@@ -96,6 +88,12 @@ revos synthesize -m omnivoice -t "Hello, world!" -o output.wav
 
 # From text file
 revos synthesize -m omnivoice -f script.txt -o audiobook.wav
+
+# List available models
+revos models
+
+# Show environment info
+revos info
 ```
 
 ## Available Models
@@ -128,6 +126,11 @@ files:
 
 Then use it: `from revos.asr import ASR; asr = ASR('my-custom-model')`
 
+## Documentation
+
+- [AGENTS.md](AGENTS.md) — Architecture guide for AI agents and contributors
+- [CONTRIBUTING.md](CONTRIBUTING.md) — How to contribute
+
 ## Project Structure
 
 ```
@@ -136,12 +139,13 @@ revos/
 │   ├── asr/           # ASR engine (sherpa-onnx backend)
 │   ├── tts/           # TTS engine (OmniVoice backend)
 │   ├── registry/      # Model manifest registry + downloader
-│   ├── cli/           # Click CLI (revos transcribe / synthesize)
+│   ├── cli/           # Click CLI (revos transcribe / synthesize / models / info)
 │   ├── device.py      # GPU/CPU auto-detection
 │   └── models/        # Bundled YAML manifests
 ├── tests/
 ├── pyproject.toml
-└── AGENTS.md          # Guide for AI agents / contributors
+├── AGENTS.md
+└── CONTRIBUTING.md
 ```
 
 ## License

@@ -172,5 +172,5 @@ def test_tts_unsupported_backend():
     )
     from revos.tts import TTS
 
-    with pytest.raises(ValueError, match="Unsupported TTS backend"):
+    with pytest.raises(ValueError, match="Supported backends: omnivoice"):
         TTS("bad-backend")

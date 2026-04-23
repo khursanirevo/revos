@@ -40,7 +40,8 @@ def ASR(model_name: str, device: str = "auto") -> BaseASR:
         return SherpaOnnxASR(model_name, device)
 
     raise ValueError(
-        f"Unsupported ASR backend: {manifest.backend} for model '{model_name}'"
+        f"Unsupported ASR backend: '{manifest.backend}' for model "
+        f"'{model_name}'. Supported backends: sherpa-onnx"
     )
 
 

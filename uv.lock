@@ -2065,6 +2065,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
+    { name = "huggingface-hub" },
     { name = "numpy" },
     { name = "onnxruntime" },
     { name = "pyyaml" },
@@ -2093,6 +2094,7 @@ tts = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.0" },
+    { name = "huggingface-hub", specifier = ">=1.11.0" },
     { name = "numpy" },
     { name = "omnivoice", marker = "extra == 'all'" },
     { name = "omnivoice", marker = "extra == 'tts'" },

@@ -108,6 +108,66 @@ def synthesize(
     )
 
 
+@cli.command()
+@click.option("--task", "-t", help="Filter by task type (asr or tts)")
+def models(task: str | None) -> None:
+    """List available models."""
+    from revos.registry import list_models
+
+    results = list_models(task)
+    if not results:
+        click.echo("No models found.")
+        return
+
+    click.echo(f"{'Name':<20} {'Task':<6} {'Backend':<15} {'Language':<12}")
+    click.echo("-" * 53)
+    for m in results:
+        click.echo(f"{m.name:<20} {m.task:<6} {m.backend:<15} {m.language:<12}")
+
+
+@cli.command()
+def info() -> None:
+    """Show environment and configuration info."""
+    import sys
+
+    click.echo(f"RevoS version:   {_get_version()}")
+    click.echo(f"Python:          {sys.version.split()[0]}")
+
+    # Device
+    from revos.device import auto_detect_device
+
+    click.echo(f"Device:          {auto_detect_device()}")
+
+    # Models
+    from revos.registry import list_models
+
+    click.echo(f"Models loaded:   {len(list_models())}")
+
+    # Cache dir
+    from revos.registry.downloader import CACHE_DIR
+
+    click.echo(f"Cache dir:       {CACHE_DIR}")
+
+    # HF auth
+    try:
+        from huggingface_hub import HfApi
+
+        user = HfApi().whoami()
+        click.echo(f"HuggingFace:     {user.get('name', 'unknown')}")
+    except Exception:
+        click.echo("HuggingFace:     not logged in")
+
+
+def _get_version() -> str:
+    """Get revos version without triggering heavy imports."""
+    from importlib.metadata import version
+
+    try:
+        return version("revos")
+    except Exception:
+        return "unknown"
+
+
 def _format_srt_time(seconds: float) -> str:
     """Format seconds as SRT timestamp (HH:MM:SS,mmm)."""
     hours = int(seconds // 3600)

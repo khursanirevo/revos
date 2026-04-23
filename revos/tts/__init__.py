@@ -40,7 +40,8 @@ def TTS(model_name: str, device: str = "auto") -> BaseTTS:
         return OmniVoiceTTS(model_name, device)
 
     raise ValueError(
-        f"Unsupported TTS backend: {manifest.backend} for model '{model_name}'"
+        f"Unsupported TTS backend: '{manifest.backend}' for model "
+        f"'{model_name}'. Supported backends: omnivoice"
     )
 
 
