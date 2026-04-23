@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "revos"
+version = "0.1.0"
+description = "A unified Python library for speech AI — ASR and TTS using open models"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "RevoS Team" },
+]
+keywords = ["asr", "tts", "speech", "sherpa-onnx", "zipformer", "omnivoice"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "sherpa-onnx>=1.10",
+    "sherpa-onnx-core",
+    "onnxruntime>=1.16",
+    "numpy",
+    "soundfile",
+    "click>=8.0",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+gpu = ["onnxruntime-gpu"]
+tts = ["omnivoice"]
+all = ["onnxruntime-gpu", "omnivoice"]
+dev = ["pytest>=7.0", "pytest-cov"]
+
+[project.scripts]
+revos = "revos.cli.main:cli"
+
+[project.entry-points."revos.models"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["revos"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: requires model download and real inference",
+]
