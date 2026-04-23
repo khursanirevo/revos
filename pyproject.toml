@@ -38,7 +38,7 @@ dependencies = [
 gpu = ["onnxruntime-gpu"]
 tts = ["omnivoice"]
 all = ["onnxruntime-gpu", "omnivoice"]
-dev = ["pytest>=7.0", "pytest-cov"]
+dev = ["pytest>=7.0", "pytest-cov", "ruff"]
 
 [project.scripts]
 revos = "revos.cli.main:cli"
@@ -53,3 +53,10 @@ testpaths = ["tests"]
 markers = [
     "slow: requires model download and real inference",
 ]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]

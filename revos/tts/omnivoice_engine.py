@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
 import numpy as np
 
@@ -26,7 +25,10 @@ def _get_hf_user() -> dict | None:
 
         api = HfApi()
         info = api.whoami()
-        return {"name": info.get("name", "unknown"), "fullname": info.get("fullname", "")}
+        return {
+            "name": info.get("name", "unknown"),
+            "fullname": info.get("fullname", ""),
+        }
     except Exception:
         return None
 
@@ -88,9 +90,11 @@ class OmniVoiceTTS(BaseTTS):
                 device_map=device_map,
             )
         except OSError as e:
-            if "gated" in str(e).lower() or "authentication" in str(e).lower() or "401" in str(e):
+            err = str(e).lower()
+            if "gated" in err or "authentication" in err or "401" in err:
                 raise RuntimeError(
-                    f"Cannot access model '{model_id}' — it requires HuggingFace authentication.\n"
+                    f"Cannot access model '{model_id}' — "
+                    f"it requires HuggingFace authentication.\n"
                     f"Log in with:  huggingface-cli login\n"
                     f"Or set:        export HF_TOKEN=your_token\n"
                     f"Get a token:  https://huggingface.co/settings/tokens"

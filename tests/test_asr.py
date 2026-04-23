@@ -2,11 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import numpy as np
-import pytest
 
 from revos.asr.result import Segment, Transcript
 
@@ -90,8 +86,8 @@ def test_asr_factory(mock_cls):
     mock_cls.return_value = mock_instance
 
     # Need to register a manifest first
-    from revos.registry.registry import register
     from revos.registry.manifest import ModelManifest
+    from revos.registry.registry import register
 
     register(
         ModelManifest(
@@ -105,5 +101,5 @@ def test_asr_factory(mock_cls):
             description="",
         )
     )
-    result = ASR("test")
+    ASR("test")
     mock_cls.assert_called_once_with("test", "auto")

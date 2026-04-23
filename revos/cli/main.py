@@ -8,7 +8,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import sys
 
 import click
 
@@ -64,10 +63,14 @@ def transcribe(model: str, audio_path: str, as_json: bool, as_srt: bool) -> None
 @click.option(
     "--file", "-f", type=click.Path(exists=True), help="Text file to synthesize"
 )
-@click.option("--output", "-o", required=True, type=click.Path(), help="Output audio path")
+@click.option(
+    "--output", "-o", required=True, type=click.Path(), help="Output audio path"
+)
 @click.option("--speed", default=1.0, help="Speech speed (default: 1.0)")
 @click.option(
-    "--ref-audio", type=click.Path(exists=True), help="Reference audio for voice cloning"
+    "--ref-audio",
+    type=click.Path(exists=True),
+    help="Reference audio for voice cloning",
 )
 @click.option("--ref-text", help="Transcription of reference audio")
 def synthesize(
@@ -99,7 +102,10 @@ def synthesize(
         ref_audio=ref_audio,
         ref_text=ref_text,
     )
-    click.echo(f"Saved {len(audio.samples)} samples ({len(audio.samples) / audio.sample_rate:.1f}s) to {output}")
+    click.echo(
+        f"Saved {len(audio.samples)} samples "
+        f"({len(audio.samples) / audio.sample_rate:.1f}s) to {output}"
+    )
 
 
 def _format_srt_time(seconds: float) -> str:

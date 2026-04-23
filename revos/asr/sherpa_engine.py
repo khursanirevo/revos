@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import sherpa_onnx
 
@@ -63,7 +62,9 @@ class SherpaOnnxASR(BaseASR):
         logger.info("ASR model %s loaded successfully", model_name)
 
         # Track gated model usage
-        if getattr(manifest, "hf_private", False) or manifest.model_url.startswith("http"):
+        if getattr(manifest, "hf_private", False) or manifest.model_url.startswith(
+            "http"
+        ):
             from revos.usage import track_usage
 
             track_usage(
