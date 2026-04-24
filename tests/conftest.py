@@ -43,7 +43,7 @@ def mock_recognizer():
 
 @pytest.fixture
 def mock_tts_model():
-    """Create a mock OmniVoice model."""
+    """Create a mock RevoVoice model."""
     model = MagicMock()
     # generate returns list of ndarray (24kHz, ~1 second)
     audio = np.random.randn(24000).astype(np.float32) * 0.1

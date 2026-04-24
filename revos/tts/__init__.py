@@ -3,7 +3,7 @@
 Usage:
     from revos.tts import TTS
 
-    tts = TTS('omnivoice')
+    tts = TTS('revovoice')
     audio = tts.synthesize('Hello, world!')
     audio.save('output.wav')
 """
@@ -22,7 +22,7 @@ def TTS(model_name: str, device: str = "auto") -> BaseTTS:
     Looks up the model manifest and dispatches to the appropriate backend.
 
     Args:
-        model_name: Name of the TTS model (e.g. "omnivoice").
+        model_name: Name of the TTS model (e.g. "revovoice").
         device: Compute device — "auto", "cpu", or "cuda".
 
     Returns:
@@ -34,14 +34,14 @@ def TTS(model_name: str, device: str = "auto") -> BaseTTS:
     """
     manifest = get(model_name, "tts")
 
-    if manifest.backend == "omnivoice":
-        from .omnivoice_engine import OmniVoiceTTS
+    if manifest.backend == "revovoice":
+        from .revovoice_engine import RevoVoiceTTS
 
-        return OmniVoiceTTS(model_name, device)
+        return RevoVoiceTTS(model_name, device)
 
     raise ValueError(
         f"Unsupported TTS backend: '{manifest.backend}' for model "
-        f"'{model_name}'. Supported backends: omnivoice"
+        f"'{model_name}'. Supported backends: revovoice"
     )
 
 

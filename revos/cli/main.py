@@ -2,7 +2,7 @@
 
 Usage:
     revos transcribe --model zipformer-v2 audio.wav
-    revos synthesize --model omnivoice --text "Hello" -o output.wav
+    revos synthesize --model revovoice --text "Hello" -o output.wav
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ def transcribe(model: str, audio_path: str, as_json: bool, as_srt: bool) -> None
 
 
 @cli.command()
-@click.option("--model", "-m", required=True, help="TTS model name (e.g. omnivoice)")
+@click.option("--model", "-m", required=True, help="TTS model name (e.g. revovoice)")
 @click.option("--text", "-t", help="Text to synthesize")
 @click.option(
     "--file", "-f", type=click.Path(exists=True), help="Text file to synthesize"

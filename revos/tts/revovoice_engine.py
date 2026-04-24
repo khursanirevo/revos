@@ -1,4 +1,4 @@
-"""OmniVoice backend for TTS (diffusion-based zero-shot TTS)."""
+"""RevoVoice backend for TTS (diffusion-based zero-shot TTS)."""
 
 from __future__ import annotations
 
@@ -33,8 +33,8 @@ def _get_hf_user() -> dict | None:
         return None
 
 
-class OmniVoiceTTS(BaseTTS):
-    """TTS engine using OmniVoice diffusion model.
+class RevoVoiceTTS(BaseTTS):
+    """TTS engine using RevoVoice diffusion model.
 
     Supports voice cloning, voice design, and auto voice generation
     across 600+ languages.
@@ -47,14 +47,14 @@ class OmniVoiceTTS(BaseTTS):
             from omnivoice import OmniVoice  # type: ignore[import-untyped]
         except ImportError as e:
             raise ImportError(
-                "OmniVoice is required for TTS. "
-                "Install it with: pip install revos[tts] or pip install omnivoice"
+                "RevoVoice is required for TTS. "
+                "Install it with: pip install revos[tts]"
             ) from e
 
         manifest = get(model_name, "tts")
         model_id = manifest.model_url
 
-        # Resolve device map for OmniVoice
+        # Resolve device map for RevoVoice
         if self.device == "auto":
             try:
                 import torch
@@ -69,7 +69,7 @@ class OmniVoiceTTS(BaseTTS):
         device_map = f"{self.device}:0" if self.device == "cuda" else self.device
 
         logger.info(
-            "Loading OmniVoice TTS model %s (device=%s)", model_name, device_map
+            "Loading RevoVoice TTS model %s (device=%s)", model_name, device_map
         )
 
         # Identify the HF user for gated model tracking
@@ -112,7 +112,7 @@ class OmniVoiceTTS(BaseTTS):
 
         self._sample_rate = manifest.sample_rate
         self._model_id = model_id
-        logger.info("OmniVoice TTS model %s loaded", model_name)
+        logger.info("RevoVoice TTS model %s loaded", model_name)
 
         # Track gated model usage
         from revos.usage import track_usage
@@ -135,7 +135,7 @@ class OmniVoiceTTS(BaseTTS):
         ref_audio: str | None = None,
         ref_text: str | None = None,
     ) -> Audio:
-        """Synthesize speech using OmniVoice.
+        """Synthesize speech using RevoVoice.
 
         Args:
             text: Text to synthesize.
@@ -156,7 +156,7 @@ class OmniVoiceTTS(BaseTTS):
 
         result = self._model.generate(**kwargs)
 
-        # OmniVoice returns a list of np.ndarray
+        # RevoVoice returns a list of np.ndarray
         if isinstance(result, list) and len(result) > 0:
             samples = np.array(result[0], dtype=np.float32)
         else:

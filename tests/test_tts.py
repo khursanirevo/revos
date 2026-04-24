@@ -60,16 +60,16 @@ def _make_mock_omnivoice():
     return mock_module, mock_cls, mock_model
 
 
-@patch("revos.tts.omnivoice_engine._get_hf_user", return_value=None)
-def test_omnivoice_engine_synthesize(mock_hf_user, tmp_path: Path):
-    """Test OmniVoiceTTS.synthesize with mocked model."""
+@patch("revos.tts.revovoice_engine._get_hf_user", return_value=None)
+def test_revovoice_engine_synthesize(mock_hf_user, tmp_path: Path):
+    """Test RevoVoiceTTS.synthesize with mocked model."""
     from revos.registry.registry import register
 
     register(
         ModelManifest(
             name="test-tts",
             task="tts",
-            backend="omnivoice",
+            backend="revovoice",
             model_type="diffusion",
             model_url="TestOrg/test-model",
             sample_rate=24000,
@@ -81,9 +81,9 @@ def test_omnivoice_engine_synthesize(mock_hf_user, tmp_path: Path):
 
     mock_module, mock_cls, mock_model = _make_mock_omnivoice()
     with patch.dict(sys.modules, {"omnivoice": mock_module}):
-        from revos.tts.omnivoice_engine import OmniVoiceTTS
+        from revos.tts.revovoice_engine import RevoVoiceTTS
 
-        engine = OmniVoiceTTS("test-tts", device="cpu")
+        engine = RevoVoiceTTS("test-tts", device="cpu")
         result = engine.synthesize("Hello world")
 
     assert isinstance(result, Audio)
@@ -91,16 +91,16 @@ def test_omnivoice_engine_synthesize(mock_hf_user, tmp_path: Path):
     mock_model.generate.assert_called_once_with(text="Hello world", speed=1.0)
 
 
-@patch("revos.tts.omnivoice_engine._get_hf_user", return_value=None)
-def test_omnivoice_engine_save_to_file(mock_hf_user, tmp_path: Path):
-    """Test OmniVoiceTTS.synthesize saves to file when output_path given."""
+@patch("revos.tts.revovoice_engine._get_hf_user", return_value=None)
+def test_revovoice_engine_save_to_file(mock_hf_user, tmp_path: Path):
+    """Test RevoVoiceTTS.synthesize saves to file when output_path given."""
     from revos.registry.registry import register
 
     register(
         ModelManifest(
             name="test-tts",
             task="tts",
-            backend="omnivoice",
+            backend="revovoice",
             model_type="diffusion",
             model_url="TestOrg/test-model",
             sample_rate=24000,
@@ -112,17 +112,17 @@ def test_omnivoice_engine_save_to_file(mock_hf_user, tmp_path: Path):
 
     mock_module, _, _ = _make_mock_omnivoice()
     with patch.dict(sys.modules, {"omnivoice": mock_module}):
-        from revos.tts.omnivoice_engine import OmniVoiceTTS
+        from revos.tts.revovoice_engine import RevoVoiceTTS
 
-        engine = OmniVoiceTTS("test-tts", device="cpu")
+        engine = RevoVoiceTTS("test-tts", device="cpu")
         out_path = str(tmp_path / "output.wav")
         engine.synthesize("Hello", output_path=out_path)
 
     assert (tmp_path / "output.wav").exists()
 
 
-@patch("revos.tts.omnivoice_engine._get_hf_user", return_value=None)
-def test_omnivoice_engine_gated_error(mock_hf_user):
+@patch("revos.tts.revovoice_engine._get_hf_user", return_value=None)
+def test_revovoice_engine_gated_error(mock_hf_user):
     """Test that OSError for gated repo raises clear RuntimeError."""
     from revos.registry.registry import register
 
@@ -130,9 +130,9 @@ def test_omnivoice_engine_gated_error(mock_hf_user):
         ModelManifest(
             name="gated-tts",
             task="tts",
-            backend="omnivoice",
+            backend="revovoice",
             model_type="diffusion",
-            model_url="Revolab/omnivoice",
+            model_url="Revolab/revovoice",
             sample_rate=24000,
             language="en",
             description="Gated model",
@@ -148,10 +148,10 @@ def test_omnivoice_engine_gated_error(mock_hf_user):
     mock_module.OmniVoice = mock_cls
 
     with patch.dict(sys.modules, {"omnivoice": mock_module}):
-        from revos.tts.omnivoice_engine import OmniVoiceTTS
+        from revos.tts.revovoice_engine import RevoVoiceTTS
 
         with pytest.raises(RuntimeError, match="HuggingFace authentication"):
-            OmniVoiceTTS("gated-tts", device="cpu")
+            RevoVoiceTTS("gated-tts", device="cpu")
 
 
 def test_tts_unsupported_backend():
@@ -172,5 +172,5 @@ def test_tts_unsupported_backend():
     )
     from revos.tts import TTS
 
-    with pytest.raises(ValueError, match="Supported backends: omnivoice"):
+    with pytest.raises(ValueError, match="Supported backends: revovoice"):
         TTS("bad-backend")

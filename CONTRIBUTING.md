@@ -20,7 +20,7 @@ uv build
 
 ## Adding a New Model (Zero Code Changes)
 
-If the model uses an existing backend (sherpa-onnx for ASR, omnivoice for TTS), just add a YAML manifest:
+If the model uses an existing backend (sherpa-onnx for ASR, revovoice for TTS), just add a YAML manifest:
 
 ```yaml
 # ~/.config/revos/models/asr/my-model.yaml
@@ -66,7 +66,7 @@ See [AGENTS.md](AGENTS.md) for detailed instructions.
 ## Code Style
 
 - Python 3.11+, formatted by ruff (line length 88)
-- Lazy imports for optional dependencies (omnivoice, torch)
+- Lazy imports for optional dependencies (omnivoice, torch)  # omnivoice is the pip package; revovoice is the model/backend name
 - Factory functions as public API (not classes)
 - YAML manifests for model configuration
 

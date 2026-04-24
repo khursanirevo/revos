@@ -12,7 +12,7 @@ A unified Python library for speech AI — ASR and TTS using open models.
 # Core (ASR support)
 pip install revos
 
-# With TTS support (OmniVoice — requires PyTorch)
+# With TTS support (RevoVoice — requires PyTorch)
 pip install revos[tts]
 
 # With GPU support
@@ -27,7 +27,7 @@ uv add revos
 
 ### HuggingFace Login (Required for TTS)
 
-> **Note:** The OmniVoice TTS model is hosted on a private HuggingFace repository. You **must** log in before using TTS.
+> **Note:** The RevoVoice TTS model is hosted on a private HuggingFace repository. You **must** log in before using TTS.
 
 ```bash
 pip install huggingface-hub
@@ -63,7 +63,7 @@ for seg in result.segments:
 from revos.tts import TTS
 
 # Basic synthesis
-tts = TTS('omnivoice')
+tts = TTS('revovoice')
 audio = tts.synthesize('Hello, how are you?')
 audio.save('greeting.wav')
 
@@ -89,10 +89,10 @@ revos transcribe -m zipformer-v2 --json audio.wav
 revos transcribe -m zipformer-v2 --srt audio.wav
 
 # Synthesize speech
-revos synthesize -m omnivoice -t "Hello, world!" -o output.wav
+revos synthesize -m revovoice -t "Hello, world!" -o output.wav
 
 # From text file
-revos synthesize -m omnivoice -f script.txt -o audiobook.wav
+revos synthesize -m revovoice -f script.txt -o audiobook.wav
 
 # List available models
 revos models
@@ -106,7 +106,7 @@ revos info
 | Model | Task | Backend | Languages | Access | Description |
 |-------|------|---------|-----------|--------|-------------|
 | `zipformer-v2` | ASR | sherpa-onnx | English | Open | Zipformer small transducer model |
-| `omnivoice` | TTS | OmniVoice | 600+ | **Gated** | Zero-shot multilingual TTS with voice cloning |
+| `revovoice` | TTS | RevoVoice | 600+ | **Gated** | Zero-shot multilingual TTS with voice cloning |
 
 ### Model Directory
 
@@ -115,12 +115,12 @@ revos/models/
 ├── asr/
 │   └── zipformer_v2.yaml    # Open — downloads from GitHub releases
 └── tts/
-    └── omnivoice.yaml       # Gated — requires HF login + approval
+    └── revovoice.yaml       # Gated — requires HF login + approval
 ```
 
 ### Gated Model Access
 
-Some models (like `omnivoice`) are hosted on private HuggingFace repositories
+Some models (like `revovoice`) are hosted on private HuggingFace repositories
 and require approval before use.
 
 1. **Log in to HuggingFace:**
@@ -135,7 +135,7 @@ and require approval before use.
 3. **Use the model:** Once approved, the model will download automatically on first use:
    ```python
    from revos.tts import TTS
-   tts = TTS('omnivoice')  # Will prompt for HF login if not authenticated
+   tts = TTS('revovoice')  # Will prompt for HF login if not authenticated
    ```
 
 > **For team members adding models:** If your model is gated, set `hf_private: true` in the YAML manifest. This tells RevoS to check HF authentication before downloading.
@@ -174,7 +174,7 @@ Then use it: `from revos.asr import ASR; asr = ASR('my-custom-model')`
 revos/
 ├── revos/
 │   ├── asr/           # ASR engine (sherpa-onnx backend)
-│   ├── tts/           # TTS engine (OmniVoice backend)
+│   ├── tts/           # TTS engine (RevoVoice backend)
 │   ├── registry/      # Model manifest registry + downloader
 │   ├── cli/           # Click CLI (revos transcribe / synthesize / models / info)
 │   ├── device.py      # GPU/CPU auto-detection

@@ -24,7 +24,7 @@ CLI (click) → Factory Functions (ASR/TTS) → Base Classes (BaseASR/BaseTTS) �
 
 ## Task 1: Add a New Model (Same Backend)
 
-If the new model uses an already-supported backend (sherpa-onnx for ASR, omnivoice for TTS), you only need a YAML manifest.
+If the new model uses an already-supported backend (sherpa-onnx for ASR, revovoice for TTS), you only need a YAML manifest.
 
 ### Steps
 
@@ -210,7 +210,7 @@ To add a completely new task (e.g., speaker diarization, voice activity detectio
 | Purpose | Location |
 |---------|----------|
 | ASR engine (sherpa-onnx) | `revos/asr/sherpa_engine.py` |
-| TTS engine (OmniVoice) | `revos/tts/omnivoice_engine.py` |
+| TTS engine (RevoVoice) | `revos/tts/revovoice_engine.py` |
 | ASR base class | `revos/asr/base.py` |
 | TTS base class | `revos/tts/base.py` |
 | ASR result types | `revos/asr/result.py` (Segment, Transcript) |
@@ -254,7 +254,7 @@ When adding any new model or backend, verify:
 
 | Backend | Engine File | Dependencies | Notes |
 |---------|------------|-------------|-------|
-| omnivoice | `revos/tts/omnivoice_engine.py` | omnivoice, torch | Diffusion-based zero-shot TTS, 600+ languages |
+| revovoice | `revos/tts/revovoice_engine.py` | omnivoice, torch | Diffusion-based zero-shot TTS, 600+ languages |
 
 ### Manifest `backend` Values
 
