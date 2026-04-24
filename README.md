@@ -103,10 +103,42 @@ revos info
 
 ## Available Models
 
-| Model | Task | Backend | Languages | Description |
-|-------|------|---------|-----------|-------------|
-| `zipformer-v2` | ASR | sherpa-onnx | English | Zipformer small transducer model |
-| `omnivoice` | TTS | OmniVoice | 600+ | Zero-shot multilingual TTS with voice cloning |
+| Model | Task | Backend | Languages | Access | Description |
+|-------|------|---------|-----------|--------|-------------|
+| `zipformer-v2` | ASR | sherpa-onnx | English | Open | Zipformer small transducer model |
+| `omnivoice` | TTS | OmniVoice | 600+ | **Gated** | Zero-shot multilingual TTS with voice cloning |
+
+### Model Directory
+
+```
+revos/models/
+├── asr/
+│   └── zipformer_v2.yaml    # Open — downloads from GitHub releases
+└── tts/
+    └── omnivoice.yaml       # Gated — requires HF login + approval
+```
+
+### Gated Model Access
+
+Some models (like `omnivoice`) are hosted on private HuggingFace repositories
+and require approval before use.
+
+1. **Log in to HuggingFace:**
+   ```bash
+   pip install huggingface-hub
+   huggingface-cli login
+   ```
+   Get your token at https://huggingface.co/settings/tokens
+
+2. **Request access:** Visit the model's HuggingFace page and submit an access request. The repo owner will review and approve.
+
+3. **Use the model:** Once approved, the model will download automatically on first use:
+   ```python
+   from revos.tts import TTS
+   tts = TTS('omnivoice')  # Will prompt for HF login if not authenticated
+   ```
+
+> **For team members adding models:** If your model is gated, set `hf_private: true` in the YAML manifest. This tells RevoS to check HF authentication before downloading.
 
 ## Adding Custom Models
 
