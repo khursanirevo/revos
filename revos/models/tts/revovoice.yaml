@@ -3,6 +3,7 @@ task: tts
 backend: revovoice
 model_type: diffusion
 model_url: "Revolab/revovoice"
+# revision: "a1b2c3d"    # Pin to a specific commit hash or tag
 sample_rate: 24000
 language: multilingual
 description: "RevoVoice multilingual zero-shot TTS with voice cloning and design (600+ languages)"

@@ -53,6 +53,7 @@ class RevoVoiceTTS(BaseTTS):
 
         manifest = get(model_name, "tts")
         model_id = manifest.model_url
+        revision = manifest.revision or None
 
         # Resolve device map for RevoVoice
         if self.device == "auto":
@@ -69,7 +70,10 @@ class RevoVoiceTTS(BaseTTS):
         device_map = f"{self.device}:0" if self.device == "cuda" else self.device
 
         logger.info(
-            "Loading RevoVoice TTS model %s (device=%s)", model_name, device_map
+            "Loading RevoVoice TTS model %s (device=%s%s)",
+            model_name,
+            device_map,
+            f", revision={revision}" if revision else "",
         )
 
         # Identify the HF user for gated model tracking
@@ -88,6 +92,7 @@ class RevoVoiceTTS(BaseTTS):
             self._model = OmniVoice.from_pretrained(
                 model_id,
                 device_map=device_map,
+                **({"revision": revision} if revision else {}),
             )
         except OSError as e:
             err = str(e).lower()

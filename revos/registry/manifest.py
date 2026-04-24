@@ -25,6 +25,7 @@ class ModelManifest:
     description: str
     files: dict[str, str] = field(default_factory=dict)
     hf_private: bool = False
+    revision: str = ""
 
 
 def load_manifest(path: Path) -> ModelManifest:
@@ -50,4 +51,5 @@ def load_manifest(path: Path) -> ModelManifest:
         description=data.get("description", ""),
         files=data.get("files", {}),
         hf_private=data.get("hf_private", False),
+        revision=data.get("revision", ""),
     )

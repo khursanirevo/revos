@@ -163,6 +163,27 @@ files:
 
 Then use it: `from revos.asr import ASR; asr = ASR('my-custom-model')`
 
+### Pinning Model Versions
+
+For HuggingFace-hosted models, pin to a specific commit hash or tag using the `revision` field:
+
+```yaml
+name: revovoice
+task: tts
+backend: revovoice
+model_type: diffusion
+model_url: "Revolab/revovoice"
+revision: "a1b2c3d"       # Pin to specific commit hash
+# revision: "v1.0.0"      # Or use a git tag
+sample_rate: 24000
+language: multilingual
+description: "RevoVoice pinned to v1.0.0"
+hf_private: true
+files: {}
+```
+
+Without `revision`, the latest version from the default branch is used.
+
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) — Architecture guide for AI agents and contributors
