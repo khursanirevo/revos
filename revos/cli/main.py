@@ -96,13 +96,24 @@ def synthesize(
     assert text is not None
 
     tts = TTS(model)
-    audio = tts.synthesize(
-        text,
-        output,
-        speed=speed,
-        ref_audio=ref_audio,
-        ref_text=ref_text,
-    )
+
+    # Auto-detect long text and use synthesize_long
+    if len(text) > 500:
+        audio = tts.synthesize_long(
+            text,
+            output,
+            speed=speed,
+            ref_audio=ref_audio,
+            ref_text=ref_text,
+        )
+    else:
+        audio = tts.synthesize(
+            text,
+            output,
+            speed=speed,
+            ref_audio=ref_audio,
+            ref_text=ref_text,
+        )
     click.echo(
         f"Saved {len(audio.samples)} samples "
         f"({len(audio.samples) / audio.sample_rate:.1f}s) to {output}"

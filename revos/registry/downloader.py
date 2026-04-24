@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+import sys
 import tarfile
 import urllib.request
 import zipfile
@@ -17,18 +18,26 @@ CACHE_DIR = Path.home() / ".cache" / "revos"
 
 
 def _progress_hook(block_num: int, block_size: int, total_size: int) -> None:
-    """Log download progress."""
+    """Show download progress bar on stderr."""
     downloaded = block_num * block_size
+    bar_width = 40
+
     if total_size > 0:
         pct = min(100, downloaded * 100 // total_size)
         mb_down = downloaded / (1024 * 1024)
         mb_total = total_size / (1024 * 1024)
-        if pct % 20 == 0 and pct > 0:
-            logger.info(
-                "Downloading: %d%% (%.1f / %.1f MB)", pct, mb_down, mb_total
-            )
-    elif downloaded % (5 * 1024 * 1024) < block_size:
-        logger.info("Downloading: %.1f MB", downloaded / (1024 * 1024))
+        filled = bar_width * pct // 100
+        bar = "=" * filled + "-" * (bar_width - filled)
+        sys.stderr.write(
+            f"\r  [{bar}] {pct:3d}% {mb_down:.1f}/{mb_total:.1f} MB"
+        )
+        sys.stderr.flush()
+        if pct >= 100:
+            sys.stderr.write("\n")
+    else:
+        mb_down = downloaded / (1024 * 1024)
+        sys.stderr.write(f"\r  Downloading: {mb_down:.1f} MB")
+        sys.stderr.flush()
 
 
 def _download(url: str, dest: Path) -> None:

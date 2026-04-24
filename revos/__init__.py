@@ -18,4 +18,8 @@ def __getattr__(name: str):
         from revos.tts import TTS
 
         return TTS
+    if name == "configure_logging":
+        from revos.logging_config import configure_logging
+
+        return configure_logging
     raise AttributeError(f"module 'revos' has no attribute {name!r}")
