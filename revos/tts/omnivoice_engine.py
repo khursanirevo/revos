@@ -99,6 +99,15 @@ class OmniVoiceTTS(BaseTTS):
                     f"Or set:        export HF_TOKEN=your_token\n"
                     f"Get a token:  https://huggingface.co/settings/tokens"
                 ) from e
+            if "403" in err or "access" in err or "permission" in err:
+                raise RuntimeError(
+                    f"Access denied to model '{model_id}'.\n"
+                    f"Your HuggingFace account does not have access to "
+                    f"this gated model.\n"
+                    f"Request access at: "
+                    f"https://huggingface.co/{model_id}\n"
+                    f"Then wait for the repository owner to approve."
+                ) from e
             raise
 
         self._sample_rate = manifest.sample_rate
