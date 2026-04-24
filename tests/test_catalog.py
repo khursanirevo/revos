@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import os
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from revos.catalog import (
     DEFAULT_CATALOG_REPO,
+    _download_raw,
+    _list_yaml_files,
     get_catalog_repo,
     list_catalog,
     pull_model,
@@ -50,22 +52,24 @@ def test_get_catalog_repo_env_beats_config():
         assert get_catalog_repo() == "env-wins"
 
 
-def test_list_catalog_missing_hf_hub():
-    """list_catalog raises when huggingface-hub is not installed."""
-    with patch.dict("sys.modules", {"huggingface_hub": None}):
-        with pytest.raises(RuntimeError, match="huggingface-hub is required"):
-            list_catalog()
+def test_list_catalog_github_error():
+    """list_catalog raises RuntimeError when GitHub is unreachable."""
+    with patch(
+        "revos.catalog._list_yaml_files",
+        side_effect=Exception("network error"),
+    ):
+        with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "bad/repo"}):
+            with pytest.raises(RuntimeError, match="Cannot fetch catalog"):
+                list_catalog()
 
 
-@patch("huggingface_hub.hf_hub_download")
-@patch("huggingface_hub.HfApi")
-def test_list_catalog_fetches_manifests(mock_api_cls, mock_download):
-    """list_catalog fetches and parses manifests from HF."""
-    mock_api = MagicMock()
-    mock_api_cls.return_value = mock_api
-    mock_api.list_repo_files.return_value = [
-        "tts/revovoice.yaml",
-        "asr/zipformer_v2.yaml",
+@patch("revos.catalog._download_raw")
+@patch("revos.catalog._list_yaml_files")
+def test_list_catalog_fetches_manifests(mock_list, mock_download):
+    """list_catalog fetches and parses manifests from GitHub."""
+    mock_list.return_value = [
+        "revos/models/tts/revovoice.yaml",
+        "revos/models/asr/zipformer_v2.yaml",
     ]
 
     manifest_tts = (
@@ -91,18 +95,10 @@ def test_list_catalog_fetches_manifests(mock_api_cls, mock_download):
         "files: {}\n"
     )
 
-    import tempfile
+    mock_download.side_effect = [manifest_tts, manifest_asr]
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tts_file = Path(tmpdir) / "revovoice.yaml"
-        tts_file.write_text(manifest_tts)
-        asr_file = Path(tmpdir) / "zipformer_v2.yaml"
-        asr_file.write_text(manifest_asr)
-
-        mock_download.side_effect = [str(tts_file), str(asr_file)]
-
-        with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "TestOrg/catalog"}):
-            results = list_catalog()
+    with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "TestOrg/catalog"}):
+        results = list_catalog()
 
     assert len(results) == 2
     names = [m.name for m in results]
@@ -110,17 +106,13 @@ def test_list_catalog_fetches_manifests(mock_api_cls, mock_download):
     assert "zipformer-v2" in names
 
 
-@patch("huggingface_hub.hf_hub_download")
-@patch("huggingface_hub.HfApi")
-def test_list_catalog_filters_by_task(mock_api_cls, mock_download):
+@patch("revos.catalog._download_raw")
+@patch("revos.catalog._list_yaml_files")
+def test_list_catalog_filters_by_task(mock_list, mock_download):
     """list_catalog filters results by task type."""
-    mock_api = MagicMock()
-    mock_api_cls.return_value = mock_api
-    mock_api.list_repo_files.return_value = [
-        "tts/revovoice.yaml",
+    mock_list.return_value = [
+        "revos/models/tts/revovoice.yaml",
     ]
-
-    import tempfile
 
     manifest = (
         "name: revovoice\n"
@@ -134,39 +126,20 @@ def test_list_catalog_filters_by_task(mock_api_cls, mock_download):
         "files: {}\n"
     )
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        f = Path(tmpdir) / "revovoice.yaml"
-        f.write_text(manifest)
-        mock_download.return_value = str(f)
+    mock_download.return_value = manifest
 
-        with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "TestOrg/catalog"}):
-            results = list_catalog(task="tts")
+    with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "TestOrg/catalog"}):
+        results = list_catalog(task="tts")
 
     assert len(results) == 1
     assert results[0].task == "tts"
 
 
-@patch("huggingface_hub.HfApi")
-def test_list_catalog_repo_not_found(mock_api_cls):
-    """list_catalog raises RuntimeError when repo is unreachable."""
-    mock_api = MagicMock()
-    mock_api_cls.return_value = mock_api
-    mock_api.list_repo_files.side_effect = Exception("repo not found")
-
-    with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "bad/repo"}):
-        with pytest.raises(RuntimeError, match="Cannot fetch catalog"):
-            list_catalog()
-
-
-@patch("huggingface_hub.hf_hub_download")
-@patch("huggingface_hub.HfApi")
-def test_pull_model_installs_locally(
-    mock_api_cls, mock_download, tmp_path
-):
+@patch("revos.catalog._download_raw")
+@patch("revos.catalog._list_yaml_files")
+def test_pull_model_installs_locally(mock_list, mock_download, tmp_path):
     """pull_model downloads and installs manifest to user dir."""
-    mock_api = MagicMock()
-    mock_api_cls.return_value = mock_api
-    mock_api.list_repo_files.return_value = ["tts/revovoice.yaml"]
+    mock_list.return_value = ["revos/models/tts/revovoice.yaml"]
 
     manifest_content = (
         "name: revovoice\n"
@@ -180,13 +153,8 @@ def test_pull_model_installs_locally(
         "files: {}\n"
     )
 
-    tmp_manifest = tmp_path / "revovoice.yaml"
-    tmp_manifest.write_text(manifest_content)
-    # pull_model downloads twice: once to scan, once to install.
-    # The scan deletes the temp file, so we need two copies.
-    tmp_manifest2 = tmp_path / "revovoice2.yaml"
-    tmp_manifest2.write_text(manifest_content)
-    mock_download.side_effect = [str(tmp_manifest), str(tmp_manifest2)]
+    # pull_model downloads twice: once to scan, once to install
+    mock_download.side_effect = [manifest_content, manifest_content]
 
     models_dir = tmp_path / "models"
     with patch("revos.catalog._USER_MODELS_DIR", models_dir):
@@ -195,13 +163,55 @@ def test_pull_model_installs_locally(
     assert (models_dir / "tts" / "revovoice.yaml").exists()
 
 
-@patch("huggingface_hub.HfApi")
-def test_pull_model_not_found(mock_api_cls):
+@patch("revos.catalog._list_yaml_files")
+def test_pull_model_not_found(mock_list):
     """pull_model raises KeyError when model is not in catalog."""
-    mock_api = MagicMock()
-    mock_api_cls.return_value = mock_api
-    mock_api.list_repo_files.return_value = []
+    mock_list.return_value = []
 
     with patch.dict(os.environ, {"REVOS_CATALOG_REPO": "TestOrg/catalog"}):
         with pytest.raises(KeyError, match="not found in catalog"):
             pull_model("nonexistent")
+
+
+@patch("revos.catalog.urllib.request.urlopen")
+def test_list_yaml_files(mock_urlopen):
+    """_list_yaml_files parses GitHub API response."""
+    api_response = [
+        {
+            "type": "dir",
+            "name": "tts",
+            "path": "revos/models/tts",
+        },
+    ]
+    dir_response = [
+        {
+            "type": "file",
+            "name": "revovoice.yaml",
+            "path": "revos/models/tts/revovoice.yaml",
+        },
+    ]
+
+    mock_resp = MagicMock()
+    mock_resp.read.side_effect = [
+        json.dumps(api_response).encode(),
+        json.dumps(dir_response).encode(),
+    ]
+    mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    mock_urlopen.return_value = mock_resp
+
+    files = _list_yaml_files("test/repo", "revos/models")
+    assert files == ["revos/models/tts/revovoice.yaml"]
+
+
+@patch("revos.catalog.urllib.request.urlopen")
+def test_download_raw(mock_urlopen):
+    """_download_raw fetches file content from GitHub."""
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = b"name: test\n"
+    mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    mock_urlopen.return_value = mock_resp
+
+    content = _download_raw("test/repo", "revos/models/test.yaml")
+    assert content == "name: test\n"

@@ -190,6 +190,27 @@ files: {}
 
 Without `revision`, the latest version from the default branch is used.
 
+### Remote Catalog
+
+The catalog fetches available models directly from this repository on GitHub. Team members add YAML manifests to `revos/models/` and users discover them without upgrading.
+
+```bash
+# Browse all available models from the repo
+revos catalog list
+
+# Install a model locally
+revos catalog pull revovoice
+```
+
+Override the catalog source with:
+```bash
+export REVOS_CATALOG_REPO="myorg/revos"    # env var
+```
+Or in `~/.config/revos/config.yaml`:
+```yaml
+catalog_repo: "myorg/revos"
+```
+
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) — Architecture guide for AI agents and contributors

@@ -1,52 +1,55 @@
-"""Remote model catalog — fetches available models from HuggingFace.
+"""Remote model catalog — fetches available models from this repo.
 
-The catalog is a HuggingFace repository containing YAML manifests
-in the same format as local manifests. Team members push new models
-to the catalog repo; users browse and pull what they need.
+The catalog lives in the revos/models/ directory of this repository.
+Team members add YAML manifests to the repo; users discover and
+pull them without upgrading the package.
 
-Default catalog repo: Revolab/revos-catalog
+Default catalog: khursanirevo/revos on GitHub
 Override with: REVOS_CATALOG_REPO env var or config.yaml
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+import urllib.request
 from pathlib import Path
+
+import yaml
 
 from .registry.manifest import ModelManifest, load_manifest
 
 logger = logging.getLogger(__name__)
 
-# Default catalog repository on HuggingFace
-DEFAULT_CATALOG_REPO = "Revolab/revos-catalog"
+# Default: this repo on GitHub
+DEFAULT_CATALOG_REPO = "khursanirevo/revos"
 
-# Local cache for pulled catalog manifests
+# GitHub API base
+_GITHUB_API = "https://api.github.com/repos"
+
+# Local user models directory
 _USER_MODELS_DIR = Path.home() / ".config" / "revos" / "models"
 
 
 def get_catalog_repo() -> str:
-    """Get the catalog repository ID.
+    """Get the catalog repository (GitHub owner/repo format).
 
     Checks in order:
       1. REVOS_CATALOG_REPO environment variable
       2. ~/.config/revos/config.yaml (catalog_repo key)
-      3. Default: Revolab/revos-catalog
+      3. Default: khursanirevo/revos
 
     Returns:
-        HuggingFace repository ID string.
+        GitHub repository in owner/repo format.
     """
-    # 1. Environment variable
     env_repo = os.environ.get("REVOS_CATALOG_REPO")
     if env_repo:
         return env_repo
 
-    # 2. Config file
     config_path = Path.home() / ".config" / "revos" / "config.yaml"
     if config_path.exists():
         try:
-            import yaml
-
             with open(config_path) as f:
                 config = yaml.safe_load(f) or {}
             if "catalog_repo" in config:
@@ -54,8 +57,58 @@ def get_catalog_repo() -> str:
         except Exception:
             pass
 
-    # 3. Default
     return DEFAULT_CATALOG_REPO
+
+
+def _github_api_get(url: str) -> bytes:
+    """Fetch data from GitHub API with proper headers."""
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "revos-catalog",
+        },
+    )
+    with urllib.request.urlopen(req) as resp:
+        return resp.read()
+
+
+def _list_yaml_files(repo: str, path: str) -> list[str]:
+    """List YAML files in a GitHub repo directory via API.
+
+    Returns:
+        List of file paths relative to repo root.
+    """
+    url = f"{_GITHUB_API}/{repo}/contents/{path}"
+    data = json.loads(_github_api_get(url))
+
+    files: list[str] = []
+    for entry in data:
+        if entry["type"] == "file" and entry["name"].endswith(
+            (".yaml", ".yml")
+        ):
+            files.append(entry["path"])
+        elif entry["type"] == "dir":
+            # Recurse into subdirectories (asr/, tts/)
+            files.extend(_list_yaml_files(repo, entry["path"]))
+    return files
+
+
+def _download_raw(repo: str, path: str) -> str:
+    """Download a file from GitHub as raw text.
+
+    Returns:
+        File content as string.
+    """
+    url = (
+        f"https://raw.githubusercontent.com/{repo}/"
+        f"HEAD/{path}"
+    )
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "revos-catalog"}
+    )
+    with urllib.request.urlopen(req) as resp:
+        return resp.read().decode("utf-8")
 
 
 def list_catalog(task: str | None = None) -> list[ModelManifest]:
@@ -68,61 +121,46 @@ def list_catalog(task: str | None = None) -> list[ModelManifest]:
         List of ModelManifest from the catalog.
 
     Raises:
-        RuntimeError: If HuggingFace hub is not available or
-            catalog repo cannot be reached.
+        RuntimeError: If catalog cannot be reached.
     """
-    try:
-        from huggingface_hub import HfApi
-    except ImportError:
-        raise RuntimeError(
-            "huggingface-hub is required for catalog access. "
-            "Install it with: pip install huggingface-hub"
-        )
-
-    repo_id = get_catalog_repo()
-    api = HfApi()
+    repo = get_catalog_repo()
 
     try:
-        files = api.list_repo_files(repo_id=repo_id, repo_type="model")
+        yaml_files = _list_yaml_files(repo, "revos/models")
     except Exception as e:
         raise RuntimeError(
-            f"Cannot fetch catalog from '{repo_id}'. "
+            f"Cannot fetch catalog from '{repo}'. "
             f"Error: {e}\n"
-            f"Check that the repository exists and you have access."
+            f"Check that the repository exists and is accessible."
         ) from e
 
-    # Find all YAML manifest files
-    yaml_files = [
-        f for f in files if f.endswith((".yaml", ".yml"))
-    ]
-
     if task:
-        yaml_files = [f for f in yaml_files if f.startswith(f"{task}/")]
+        yaml_files = [
+            f for f in yaml_files if f.startswith(f"revos/models/{task}/")
+        ]
 
     manifests: list[ModelManifest] = []
     for yaml_path in yaml_files:
         try:
-            local_path = _download_manifest(repo_id, yaml_path)
-            manifest = load_manifest(local_path)
-            # Clean up temp download
-            local_path.unlink(missing_ok=True)
+            content = _download_raw(repo, yaml_path)
+            import tempfile
+
+            # Write to temp file to use load_manifest
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".yaml", delete=False
+            ) as tmp:
+                tmp.write(content)
+                tmp_path = Path(tmp.name)
+
+            manifest = load_manifest(tmp_path)
+            tmp_path.unlink(missing_ok=True)
             manifests.append(manifest)
         except Exception as e:
-            logger.warning("Failed to load catalog entry %s: %s", yaml_path, e)
+            logger.warning(
+                "Failed to load catalog entry %s: %s", yaml_path, e
+            )
 
     return manifests
-
-
-def _download_manifest(repo_id: str, path: str) -> Path:
-    """Download a single manifest file from the catalog repo."""
-    from huggingface_hub import hf_hub_download
-
-    local = hf_hub_download(
-        repo_id=repo_id,
-        filename=path,
-        repo_type="model",
-    )
-    return Path(local)
 
 
 def pull_model(name: str) -> Path:
@@ -141,29 +179,33 @@ def pull_model(name: str) -> Path:
         KeyError: If the model is not found in the catalog.
         RuntimeError: If download fails.
     """
+    repo = get_catalog_repo()
+
+    # List and search for the model
     try:
-        from huggingface_hub import HfApi, hf_hub_download
-    except ImportError:
+        yaml_files = _list_yaml_files(repo, "revos/models")
+    except Exception as e:
         raise RuntimeError(
-            "huggingface-hub is required for catalog access. "
-            "Install it with: pip install huggingface-hub"
-        )
-
-    repo_id = get_catalog_repo()
-    api = HfApi()
-
-    # Find the manifest file for this model
-    files = api.list_repo_files(repo_id=repo_id, repo_type="model")
-    yaml_files = [f for f in files if f.endswith((".yaml", ".yml"))]
+            f"Cannot fetch catalog from '{repo}'. "
+            f"Error: {e}"
+        ) from e
 
     target_file = None
+    target_manifest = None
+
     for yf in yaml_files:
         try:
-            local = hf_hub_download(
-                repo_id=repo_id, filename=yf, repo_type="model"
-            )
-            manifest = load_manifest(Path(local))
-            Path(local).unlink(missing_ok=True)
+            content = _download_raw(repo, yf)
+            import tempfile
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".yaml", delete=False
+            ) as tmp:
+                tmp.write(content)
+                tmp_path = Path(tmp.name)
+
+            manifest = load_manifest(tmp_path)
+            tmp_path.unlink(missing_ok=True)
             if manifest.name == name:
                 target_file = yf
                 target_manifest = manifest
@@ -174,24 +216,17 @@ def pull_model(name: str) -> Path:
     if target_file is None:
         raise KeyError(
             f"Model '{name}' not found in catalog "
-            f"'{repo_id}'. "
-            f"Run 'revos catalog' to see available models."
+            f"'{repo}'. "
+            f"Run 'revos catalog list' to see available models."
         )
 
-    # Download to user models directory
+    # Install to user models directory
     dest_dir = _USER_MODELS_DIR / target_manifest.task
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest_path = dest_dir / Path(target_file).name
 
-    local = hf_hub_download(
-        repo_id=repo_id, filename=target_file, repo_type="model"
-    )
-
-    # Copy to user config
-    import shutil
-
-    shutil.copy2(local, dest_path)
-    Path(local).unlink(missing_ok=True)
+    content = _download_raw(repo, target_file)
+    dest_path.write_text(content)
 
     # Register in the live registry
     manifest = load_manifest(dest_path)
