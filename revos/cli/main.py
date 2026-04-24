@@ -148,6 +148,11 @@ def info() -> None:
     cache_dir = Path.home() / ".cache" / "revos"
     click.echo(f"Cache dir:       {cache_dir}")
 
+    # Catalog repo
+    from revos.catalog import get_catalog_repo
+
+    click.echo(f"Catalog repo:    {get_catalog_repo()}")
+
     # HF auth
     try:
         from huggingface_hub import HfApi
@@ -156,6 +161,59 @@ def info() -> None:
         click.echo(f"HuggingFace:     {user.get('name', 'unknown')}")
     except Exception:
         click.echo("HuggingFace:     not logged in")
+
+
+@cli.group()
+def catalog() -> None:
+    """Browse and pull models from the remote catalog."""
+
+
+@catalog.command("list")
+@click.option("--task", "-t", help="Filter by task type (asr or tts)")
+def catalog_list(task: str | None) -> None:
+    """List models available in the remote catalog."""
+    from revos.catalog import get_catalog_repo, list_catalog
+
+    click.echo(f"Fetching catalog from {get_catalog_repo()}...")
+    try:
+        results = list_catalog(task)
+    except RuntimeError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+    if not results:
+        click.echo("No models found in catalog.")
+        return
+
+    click.echo(
+        f"{'Name':<20} {'Task':<6} {'Backend':<15} "
+        f"{'Language':<12} {'Version':<12}"
+    )
+    click.echo("-" * 65)
+    for m in results:
+        rev = m.revision or "latest"
+        click.echo(
+            f"{m.name:<20} {m.task:<6} {m.backend:<15} "
+            f"{m.language:<12} {rev:<12}"
+        )
+    click.echo("\nUse 'revos catalog pull <name>' to install.")
+
+
+@catalog.command("pull")
+@click.argument("model_name")
+def catalog_pull(model_name: str) -> None:
+    """Pull a model from the catalog and install it locally."""
+    from revos.catalog import get_catalog_repo, pull_model
+
+    click.echo(f"Pulling '{model_name}' from {get_catalog_repo()}...")
+    try:
+        dest = pull_model(model_name)
+    except (KeyError, RuntimeError) as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+    click.echo(f"Installed to {dest}")
+    click.echo(f"Use: from revos.tts import TTS; TTS('{model_name}')")
 
 
 def _get_version() -> str:

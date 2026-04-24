@@ -97,6 +97,12 @@ revos synthesize -m revovoice -f script.txt -o audiobook.wav
 # List available models
 revos models
 
+# Browse remote catalog
+revos catalog list
+
+# Pull a model from the catalog
+revos catalog pull revovoice
+
 # Show environment info
 revos info
 ```
