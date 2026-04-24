@@ -14,6 +14,7 @@ CLI (click) → Factory Functions (ASR/TTS) → Base Classes (BaseASR/BaseTTS) �
                               Model Registry (YAML manifests)
                                     ↕
                               Model Downloader (~/.cache/revos/)
+                              Remote Catalog (GitHub repo)
 ```
 
 **Key principle:** Adding a new model should require ZERO changes to core code if the backend is already supported. Only a new YAML manifest is needed.
@@ -36,9 +37,11 @@ task: asr                    # "asr" or "tts"
 backend: sherpa-onnx         # Must match an existing backend
 model_type: transducer       # sherpa-onnx: transducer, whisper, paraformer, etc.
 model_url: "https://..."     # Download URL (tar.bz2, tar.gz, zip)
+# revision: "a1b2c3d"        # Pin to HF commit hash or tag
 sample_rate: 16000           # Model's expected sample rate
 language: en                 # Supported language(s)
 description: "Human-readable description"
+hf_private: false            # True for gated HF models
 files:                       # Filenames inside the archive
   encoder: "encoder.onnx"
   decoder: "decoder.onnx"
@@ -172,6 +175,26 @@ class MyBackendTTS(BaseTTS):
 - Must support `output_path` parameter for direct file saving.
 - Must lazy-import backend dependencies.
 
+### Long Text Support
+
+`BaseTTS` provides `synthesize_long()` which automatically splits
+long text into sentences, synthesizes each chunk, and concatenates
+the audio with short silence gaps.
+
+```python
+audio = tts.synthesize_long(
+    "Very long text with many sentences...",
+    output_path="output.wav",
+    max_chars=500,           # max chars per chunk
+    silence_duration=0.1,    # silence between chunks
+)
+print(f"Duration: {audio.duration:.1f}s")
+```
+
+Text splitting handles English and CJK punctuation. Falls back to
+comma/word boundaries for very long sentences. `Audio.concatenate()`
+joins segments with configurable silence gaps.
+
 ---
 
 ## Task 4: Add a New Task Type
@@ -212,17 +235,49 @@ To add a completely new task (e.g., speaker diarization, voice activity detectio
 | ASR engine (sherpa-onnx) | `revos/asr/sherpa_engine.py` |
 | TTS engine (RevoVoice) | `revos/tts/revovoice_engine.py` |
 | ASR base class | `revos/asr/base.py` |
-| TTS base class | `revos/tts/base.py` |
+| TTS base class | `revos/tts/base.py` (includes `synthesize_long`) |
 | ASR result types | `revos/asr/result.py` (Segment, Transcript) |
-| TTS result types | `revos/tts/result.py` (Audio) |
+| TTS result types | `revos/tts/result.py` (Audio, Audio.concatenate) |
 | Model registry | `revos/registry/registry.py` |
 | Manifest loader | `revos/registry/manifest.py` (ModelManifest dataclass) |
 | Model downloader | `revos/registry/downloader.py` |
+| Remote catalog | `revos/catalog.py` |
 | Device detection | `revos/device.py` |
 | CLI entry point | `revos/cli/main.py` |
 | Bundled manifests | `revos/models/{asr,tts}/*.yaml` |
 | User manifests | `~/.config/revos/models/**/*.yaml` |
 | Model cache | `~/.cache/revos/{model_name}/` |
+
+---
+
+## Remote Catalog
+
+Users can discover and install models from this repo without upgrading
+the package. The catalog fetches YAML manifests from the GitHub repo's
+`revos/models/` directory via the GitHub API.
+
+### How It Works
+
+1. Team member adds a YAML manifest to `revos/models/{task}/` and pushes
+2. User runs `revos catalog list` to see available models
+3. User runs `revos catalog pull <name>` to install locally
+
+### CLI Commands
+
+```bash
+revos catalog list              # List models from GitHub
+revos catalog list -t tts       # Filter by task
+revos catalog pull revovoice    # Install a model locally
+```
+
+### Adding Models to the Catalog
+
+Just add a YAML file to `revos/models/{task}/` in this repo. No
+separate catalog repo or service needed. Users get it automatically
+on the next `revos catalog list`.
+
+The catalog source is configurable via `REVOS_CATALOG_REPO` env var
+or `~/.config/revos/config.yaml` (`catalog_repo` key).
 
 ---
 

@@ -41,6 +41,28 @@ files:
 
 Then use it: `from revos.asr import ASR; ASR('my-model')`
 
+### Pinning Model Versions
+
+For HuggingFace-hosted models, pin to a specific commit using the `revision` field:
+
+```yaml
+revision: "a1b2c3d"    # Pin to specific commit hash
+# revision: "v1.0.0"   # Or use a git tag
+```
+
+For gated models, set `hf_private: true`.
+
+### Remote Catalog
+
+Models added to `revos/models/` in this repo are automatically
+available via the remote catalog. Users can discover and install
+them without upgrading:
+
+```bash
+revos catalog list           # Browse models from this repo
+revos catalog pull <name>    # Install a model locally
+```
+
 ## Adding a New Backend
 
 1. Create `revos/{task}/{backend}_engine.py` inheriting from the base class
@@ -66,7 +88,8 @@ See [AGENTS.md](AGENTS.md) for detailed instructions.
 ## Code Style
 
 - Python 3.11+, formatted by ruff (line length 88)
-- Lazy imports for optional dependencies (omnivoice, torch)  # omnivoice is the pip package; revovoice is the model/backend name
+- Lazy imports for optional dependencies
+  (omnivoice pip package; revovoice is the model/backend name)
 - Factory functions as public API (not classes)
 - YAML manifests for model configuration
 
@@ -88,8 +111,9 @@ uv run pytest tests/ -v -m "not slow"
 ```
 revos/
   asr/           # ASR engine
-  tts/           # TTS engine
+  tts/           # TTS engine (includes synthesize_long)
   registry/      # Model manifest registry + downloader
+  catalog.py     # Remote model catalog (GitHub-based)
   cli/           # Click CLI
   models/        # Bundled YAML manifests
 tests/           # Test suite
